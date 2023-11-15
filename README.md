@@ -3,7 +3,7 @@ Package for checking python typing annotations.
 
 The documentation is available online at:
 
-https://github.com/Olmai/typingchecker/wiki
+https://github.com/Olimaol/typingchecker/wiki
 
 ### Authors
 
