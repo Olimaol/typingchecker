@@ -1,4 +1,12 @@
-from typing import get_type_hints, get_origin, get_args, Union, Any, Callable, Optional
+from typing import (
+    get_type_hints,
+    get_origin,
+    get_args,
+    Union,
+    Any,
+    Callable,
+    Optional,
+)
 import inspect
 
 
@@ -47,6 +55,22 @@ def check_types(warnings: bool = True):
     return decorator
 
 
+def check_class_base_rec(var_name, func, type_hint, args, base):
+    ### check if args of type hint is equal to base, if yes, return None
+    if not args == base:
+        ### if not equal go deeper with base
+        if base == None:
+            ### if base already None, raise TypeError
+            raise TypeError(
+                f"Parameter {var_name} of function {func} should be a class of {get_args(type_hint)[0]}"
+            )
+        else:
+            ### go deeper and check base of base of base
+            return check_class_base_rec(var_name, func, type_hint, args, base.__base__)
+    else:
+        return None
+
+
 def check_type_hint(
     var_name: str,
     var: Any,
@@ -81,7 +105,34 @@ def check_type_hint(
     if current_type_hint is None:
         current_type_hint = type_hint
 
+    # print(
+    #     f"var_name: {var_name}, var: {current_var}, var_type: {type(current_var)}, current_type_hint: {current_type_hint}, origin: {get_origin(current_type_hint)}, args: {get_args(current_type_hint)}"
+    # )
+
     ### depending on origin of type hint doe different things
+    ### if origin is type
+    ### check if args of type hint is equal to var
+    ### if not, check if equal to base of var recursively
+    ### if never true, raise TypeError
+    if get_origin(current_type_hint) is type:
+        ### Type expects a class, first check if var is a class
+        if not inspect.isclass(current_var):
+            raise TypeError(
+                f"Parameter {var_name} of function {func} should be a class of {get_args(type_hint)[0]}"
+            )
+        ### check if args of type hint is equal to var, if yes, return None
+        if get_args(current_type_hint)[0] == current_var:
+            return None
+        else:
+            ### if not equal, check if base class is equal to args of type hint
+            return check_class_base_rec(
+                var_name,
+                func,
+                type_hint,
+                args=get_args(current_type_hint)[0],
+                base=current_var.__base__,
+            )
+
     ### if origin is dict
     ### check if type is dict
     ### check if type of all keys and vals are correct
@@ -172,6 +223,7 @@ def check_type_hint(
 
     ### if origin is None, its a simple type and we can check it directly using isinstance
     elif get_origin(current_type_hint) is None:
+        ### check if variable is an instance of the type hint, if not raise TypeError
         if not isinstance(current_var, current_type_hint):
             raise TypeError(
                 f"Parameter {var_name} of function {func} should be {type_hint}"
