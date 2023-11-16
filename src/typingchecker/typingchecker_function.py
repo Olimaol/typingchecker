@@ -10,7 +10,7 @@ from typing import (
 import inspect
 
 
-def check_types(warnings: bool = True):
+def check_types(warnings: bool = True, strictfloat: bool = False):
     """
     A decorator that checks the types of the arguments passed to a function.
     It raises a TypeError if the type of an argument is not compatible with the type hint.
@@ -19,6 +19,8 @@ def check_types(warnings: bool = True):
     -----------
     warnings : bool, optional
         Whether to print warnings when a type cannot be checked, by default True
+    strictfloat : bool, optional
+        If True, ints will raise an error if a float is expected, by default False, in which case ints will be converted to floats
     """
 
     def decorator(func: Callable):
@@ -40,6 +42,7 @@ def check_types(warnings: bool = True):
                         type_hint=hints[arg_name],
                         func=func,
                         warnings=warnings,
+                        strictfloat=strictfloat,
                     )
 
             ### check kwargs
@@ -51,6 +54,7 @@ def check_types(warnings: bool = True):
                     type_hint=hints[kwarg_name],
                     func=func,
                     warnings=warnings,
+                    strictfloat=strictfloat,
                 )
             return func(*args, **kwargs)
 
@@ -82,6 +86,7 @@ def check_type_hint(
     type_hint: type,
     func: Callable,
     warnings: bool,
+    strictfloat: bool = False,
     current_var: Optional[Any] = None,
     current_type_hint: Optional[type] = None,
 ) -> None:
@@ -100,6 +105,10 @@ def check_type_hint(
         Type hint of the variable
     func : function
         Function that is checked
+    warnings : bool, optional
+        Whether to print warnings when a type cannot be checked, by default True
+    strictfloat : bool, optional
+        If True, ints will raise an error if a float is expected, by default False, in which case ints will be converted to floats
     current_var : Any, optional
         List or dict containing current variable to check, used for recursive calls, by default None
     current_type_hint : type, optional
@@ -162,6 +171,7 @@ def check_type_hint(
                 type_hint=type_hint,
                 func=func,
                 warnings=warnings,
+                strictfloat=strictfloat,
                 current_var=list(current_var[var_idx].keys()),
                 current_type_hint=type_key,
             )
@@ -172,6 +182,7 @@ def check_type_hint(
                 type_hint=type_hint,
                 func=func,
                 warnings=warnings,
+                strictfloat=strictfloat,
                 current_var=current_var[var_idx],
                 current_type_hint=type_val,
             )
@@ -198,6 +209,7 @@ def check_type_hint(
                 type_hint=type_hint,
                 func=func,
                 warnings=warnings,
+                strictfloat=strictfloat,
                 current_var=current_var[var_idx],
                 current_type_hint=type_element,
             )
@@ -221,6 +233,7 @@ def check_type_hint(
                     type_hint=type_hint,
                     func=func,
                     warnings=warnings,
+                    strictfloat=strictfloat,
                     current_var=current_var,
                     current_type_hint=type_,
                 )
@@ -239,7 +252,11 @@ def check_type_hint(
         ### catch if float type is expected as type hint but the type of the variable is int
         ### this should not raise an error ints can simply be converted to float (nothing is lost, in contrast to float->int)
         if not isinstance(current_var[var_idx], current_type_hint):
-            if current_type_hint is float and isinstance(current_var[var_idx], int):
+            if (
+                current_type_hint is float
+                and isinstance(current_var[var_idx], int)
+                and not strictfloat
+            ):
                 current_var[var_idx] = float(current_var[var_idx])
                 return None
             raise TypeError(
