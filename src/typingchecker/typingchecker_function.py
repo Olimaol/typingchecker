@@ -27,13 +27,16 @@ def check_types(warnings: bool = True):
             hints = get_type_hints(func)
             var_names = list(inspect.signature(func).parameters.keys())
 
+            args = list(args)
+
             ### check args
             for arg_idx, arg in enumerate(args):
                 arg_name = var_names[arg_idx]
                 if arg_name in hints.keys():
                     check_type_hint(
                         var_name=arg_name,
-                        var=arg,
+                        var=args,
+                        var_idx=arg_idx,
                         type_hint=hints[arg_name],
                         func=func,
                         warnings=warnings,
@@ -43,7 +46,8 @@ def check_types(warnings: bool = True):
             for kwarg_name, kwarg in kwargs.items():
                 check_type_hint(
                     var_name=kwarg_name,
-                    var=kwarg,
+                    var=kwargs,
+                    var_idx=kwarg_name,
                     type_hint=hints[kwarg_name],
                     func=func,
                     warnings=warnings,
@@ -74,6 +78,7 @@ def check_class_base_rec(var_name, func, type_hint, args, base):
 def check_type_hint(
     var_name: str,
     var: Any,
+    var_idx: Any,
     type_hint: type,
     func: Callable,
     warnings: bool,
@@ -88,13 +93,15 @@ def check_type_hint(
     var_name : str
         Name of the variable
     var : Any
-        Variable to check
+        List or dict containing variable to check
+    var_idx : Any
+        Index or key of the variable to check
     type_hint : type
         Type hint of the variable
     func : function
         Function that is checked
     current_var : Any, optional
-        Current variable to check, used for recursive calls, by default None
+        List or dict containing current variable to check, used for recursive calls, by default None
     current_type_hint : type, optional
         Current type hint of the variable, used for recursive calls, by default None
     """
@@ -105,6 +112,7 @@ def check_type_hint(
     if current_type_hint is None:
         current_type_hint = type_hint
 
+    # print(f"var_name: {var_name}, var: {current_var}, var_idx: {var_idx}")
     # print(
     #     f"var_name: {var_name}, var: {current_var}, var_type: {type(current_var)}, current_type_hint: {current_type_hint}, origin: {get_origin(current_type_hint)}, args: {get_args(current_type_hint)}"
     # )
@@ -116,12 +124,12 @@ def check_type_hint(
     ### if never true, raise TypeError
     if get_origin(current_type_hint) is type:
         ### Type expects a class, first check if var is a class
-        if not inspect.isclass(current_var):
+        if not inspect.isclass(current_var[var_idx]):
             raise TypeError(
                 f"Parameter {var_name} of function {func} should be a class of {get_args(type_hint)[0]}"
             )
         ### check if args of type hint is equal to var, if yes, return None
-        if get_args(current_type_hint)[0] == current_var:
+        if get_args(current_type_hint)[0] == current_var[var_idx]:
             return None
         else:
             ### if not equal, check if base class is equal to args of type hint
@@ -130,7 +138,7 @@ def check_type_hint(
                 func,
                 type_hint,
                 args=get_args(current_type_hint)[0],
-                base=current_var.__base__,
+                base=current_var[var_idx].__base__,
             )
 
     ### if origin is dict
@@ -139,30 +147,32 @@ def check_type_hint(
     ### do this by calling function check_type_hint recursively
     if get_origin(current_type_hint) is dict:
         ### check if type is dict
-        if not isinstance(current_var, dict):
+        if not isinstance(current_var[var_idx], dict):
             raise TypeError(
                 f"Parameter {var_name} of function {func} should be {type_hint}"
             )
         ### passed dict check, now check if type of keys and vals are correct
         type_key = get_args(current_type_hint)[0]
         type_val = get_args(current_type_hint)[1]
-        for key, val in current_var.items():
+        for key, val in current_var[var_idx].items():
             check_type_hint(
-                var_name=key,
+                var_name=var_name,
                 var=var,
+                var_idx=list(current_var[var_idx].keys()).index(key),
                 type_hint=type_hint,
                 func=func,
                 warnings=warnings,
-                current_var=key,
+                current_var=list(current_var[var_idx].keys()),
                 current_type_hint=type_key,
             )
             check_type_hint(
-                var_name=key,
+                var_name=var_name,
                 var=var,
+                var_idx=key,
                 type_hint=type_hint,
                 func=func,
                 warnings=warnings,
-                current_var=val,
+                current_var=current_var[var_idx],
                 current_type_hint=type_val,
             )
         ### variable passed all checks, return None
@@ -174,20 +184,21 @@ def check_type_hint(
     ### do this by calling function check_type_hint recursively
     elif get_origin(current_type_hint) is list:
         ### check if type is list
-        if not isinstance(current_var, list):
+        if not isinstance(current_var[var_idx], list):
             raise TypeError(
                 f"Parameter {var_name} of function {func} should be {type_hint}"
             )
         ### passed list check, now check if type of all elements is correct
         type_element = get_args(current_type_hint)[0]
-        for element in current_var:
+        for element_idx in range(len(current_var[var_idx])):
             check_type_hint(
                 var_name=var_name,
                 var=var,
+                var_idx=element_idx,
                 type_hint=type_hint,
                 func=func,
                 warnings=warnings,
-                current_var=element,
+                current_var=current_var[var_idx],
                 current_type_hint=type_element,
             )
         ### variable passed all checks, return None
@@ -206,6 +217,7 @@ def check_type_hint(
                 check_type_hint(
                     var_name=var_name,
                     var=var,
+                    var_idx=var_idx,
                     type_hint=type_hint,
                     func=func,
                     warnings=warnings,
@@ -224,7 +236,12 @@ def check_type_hint(
     ### if origin is None, its a simple type and we can check it directly using isinstance
     elif get_origin(current_type_hint) is None:
         ### check if variable is an instance of the type hint, if not raise TypeError
-        if not isinstance(current_var, current_type_hint):
+        ### catch if float type is expected as type hint but the type of the variable is int
+        ### this should not raise an error ints can simply be converted to float (nothing is lost, in contrast to float->int)
+        if not isinstance(current_var[var_idx], current_type_hint):
+            if current_type_hint is float and isinstance(current_var[var_idx], int):
+                current_var[var_idx] = float(current_var[var_idx])
+                return None
             raise TypeError(
                 f"Parameter {var_name} of function {func} should be {type_hint}"
             )
@@ -234,6 +251,6 @@ def check_type_hint(
     ### if variable passed all checks without errors or returning, print that the type cannot be checked
     if warnings:
         print(
-            f"WARNING check_type_hint: Variable {var_name} with type {type(var)} of function {func} could not be checked."
+            f"WARNING check_type_hint: Variable {var_name} of function {func} could not be checked."
         )
     return None

@@ -58,6 +58,35 @@ def test_check_types_decorator():
     )
 
     ### if check_types works, this should not raise an error
+    ### d expects float, but int can simply be used as float...
+    checked_class(
+        1,
+        [[1]],
+        needed_obj,
+        1,
+        {"a": 1},
+    )
+
+    ### if check_types works, this should not raise an error
+    ### d expects float, but int can simply be used as float...
+    checked_class(
+        1,
+        [[1]],
+        needed_obj,
+        [1],
+        {"a": 1},
+    )
+    ### if check_types works, this should not raise an error
+    ### d expects float, but int can simply be used as float...
+    checked_class(
+        1,
+        [[1]],
+        needed_obj,
+        [1, 2],
+        {"a": 1},
+    )
+
+    ### if check_types works, this should not raise an error
     checked_class(
         1,
         [[1], [2]],
@@ -162,6 +191,16 @@ def test_check_types_decorator():
     with pytest.raises(TypeError):
         checked_class(
             "1",
+            [[1]],
+            needed_obj,
+            1.0,
+            {"a": 1},
+        )
+
+    ### if check_types works, this should raise an TypeError because a is not an int
+    with pytest.raises(TypeError):
+        checked_class(
+            1.2,
             [[1]],
             needed_obj,
             1.0,
