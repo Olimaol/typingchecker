@@ -8,6 +8,7 @@ from typing import (
     Optional,
 )
 import inspect
+from functools import wraps
 
 
 def check_types(warnings: bool = True, strictfloat: bool = False):
@@ -24,6 +25,7 @@ def check_types(warnings: bool = True, strictfloat: bool = False):
     """
 
     def decorator(func: Callable):
+        @wraps(func)
         def wrapper(*args, **kwargs):
             ### get type hints and variable names
             hints = get_type_hints(func)
