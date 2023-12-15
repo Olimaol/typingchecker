@@ -49,15 +49,16 @@ def check_types(warnings: bool = True, strictfloat: bool = False):
 
             ### check kwargs
             for kwarg_name, kwarg in kwargs.items():
-                check_type_hint(
-                    var_name=kwarg_name,
-                    var=kwargs,
-                    var_idx=kwarg_name,
-                    type_hint=hints[kwarg_name],
-                    func=func,
-                    warnings=warnings,
-                    strictfloat=strictfloat,
-                )
+                if kwarg_name in hints.keys():
+                    check_type_hint(
+                        var_name=kwarg_name,
+                        var=kwargs,
+                        var_idx=kwarg_name,
+                        type_hint=hints[kwarg_name],
+                        func=func,
+                        warnings=warnings,
+                        strictfloat=strictfloat,
+                    )
             return func(*args, **kwargs)
 
         return wrapper
