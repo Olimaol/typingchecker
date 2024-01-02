@@ -203,19 +203,92 @@ def check_type_hint(
                 f"Parameter {var_name} of function {func} should be {type_hint}"
             )
         ### passed list check, now check if type of all elements is correct
-        type_element = get_args(current_type_hint)[0]
-        for element_idx in range(len(current_var[var_idx])):
-            check_type_hint(
-                var_name=var_name,
-                var=var,
-                var_idx=element_idx,
-                type_hint=type_hint,
-                func=func,
-                warnings=warnings,
-                strictfloat=strictfloat,
-                current_var=current_var[var_idx],
-                current_type_hint=type_element,
+        ### if only one type is expected within list --> check all elements against this
+        ### type
+        if len(get_args(current_type_hint)) == 1:
+            type_element = get_args(current_type_hint)[0]
+            for element_idx in range(len(current_var[var_idx])):
+                check_type_hint(
+                    var_name=var_name,
+                    var=var,
+                    var_idx=element_idx,
+                    type_hint=type_hint,
+                    func=func,
+                    warnings=warnings,
+                    strictfloat=strictfloat,
+                    current_var=current_var[var_idx],
+                    current_type_hint=type_element,
+                )
+        ### if multiple types are expected within list --> list should have the same
+        ### length as the number of types and the types should be in the same order
+        elif len(get_args(current_type_hint)) == len(current_var[var_idx]):
+            for element_idx, type_element in enumerate(get_args(current_type_hint)):
+                check_type_hint(
+                    var_name=var_name,
+                    var=var,
+                    var_idx=element_idx,
+                    type_hint=type_hint,
+                    func=func,
+                    warnings=warnings,
+                    strictfloat=strictfloat,
+                    current_var=current_var[var_idx],
+                    current_type_hint=type_element,
+                )
+        else:
+            raise TypeError(
+                f"Parameter {var_name} of function {func} should be {type_hint}"
             )
+
+        ### variable passed all checks, return None
+        return None
+
+    ### if origin is tuple
+    ### check if type is tuple
+    ### check if type of all elements is correct
+    ### do this by calling function check_type_hint recursively
+    elif get_origin(current_type_hint) is tuple:
+        ### check if type is tuple
+        if not isinstance(current_var[var_idx], tuple):
+            raise TypeError(
+                f"Parameter {var_name} of function {func} should be {type_hint}"
+            )
+        ### passed tuple check, now check if type of all elements is correct
+        ### if only one type is expected within tuple --> check all elements against this
+        ### type
+        if len(get_args(current_type_hint)) == 1:
+            type_element = get_args(current_type_hint)[0]
+            for element_idx in range(len(current_var[var_idx])):
+                check_type_hint(
+                    var_name=var_name,
+                    var=var,
+                    var_idx=element_idx,
+                    type_hint=type_hint,
+                    func=func,
+                    warnings=warnings,
+                    strictfloat=strictfloat,
+                    current_var=current_var[var_idx],
+                    current_type_hint=type_element,
+                )
+        ### if multiple types are expected within tuple --> tuple should have the same
+        ### length as the number of types and the types should be in the same order
+        elif len(get_args(current_type_hint)) == len(current_var[var_idx]):
+            for element_idx, type_element in enumerate(get_args(current_type_hint)):
+                check_type_hint(
+                    var_name=var_name,
+                    var=var,
+                    var_idx=element_idx,
+                    type_hint=type_hint,
+                    func=func,
+                    warnings=warnings,
+                    strictfloat=strictfloat,
+                    current_var=current_var[var_idx],
+                    current_type_hint=type_element,
+                )
+        else:
+            raise TypeError(
+                f"Parameter {var_name} of function {func} should be {type_hint}"
+            )
+
         ### variable passed all checks, return None
         return None
 

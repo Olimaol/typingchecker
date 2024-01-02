@@ -36,6 +36,8 @@ class checked_class:
         # i: this expects a subclass of the object class which should be any class
         i: Type[object] = object,
         j: Type[needed_int_class] | Type[needed_obj_class] = needed_int_class,
+        k: tuple[int, str] = (1, "a"),
+        l: list[int, str] = [1, "a"],
     ):
         pass
 
@@ -61,7 +63,7 @@ def test_check_types_decorator():
     ### d expects float, but int can simply be used as float...
     checked_class(
         1,
-        [[1]],
+        [[1, 2]],
         needed_obj,
         1,
         {"a": 1},
@@ -183,6 +185,28 @@ def test_check_types_decorator():
         j=needed_obj_class,
     )
 
+    ### if check_types works, this should not raise an error because k is a tuple of int
+    ### and str
+    checked_class(
+        1,
+        [[1]],
+        needed_obj,
+        1.0,
+        {"a": 1},
+        k=(1, "a"),
+    )
+
+    ### if check_types works, this should not raise an error because l is a list of int
+    ### and str
+    checked_class(
+        1,
+        [[1]],
+        needed_obj,
+        1.0,
+        {"a": 1},
+        l=[1, "a"],
+    )
+
     ####################################################################################
     #############################   RAISING ERRORS   ###################################
     ####################################################################################
@@ -279,7 +303,7 @@ def test_check_types_decorator():
             h=2,
         )
 
-    ### if check_types works, this should raise an TypeError because f epxects a specific class and object is too general
+    ### if check_types works, this should raise an TypeError because f expects a specific class and object is too general
     with pytest.raises(TypeError):
         checked_class(
             1,
@@ -290,7 +314,7 @@ def test_check_types_decorator():
             f=object,
         )
 
-    ### if check_types works, this should raise an TypeError because g epxects a specific class and object is too general
+    ### if check_types works, this should raise an TypeError because g expects a specific class and object is too general
     with pytest.raises(TypeError):
         checked_class(
             1,
@@ -301,7 +325,7 @@ def test_check_types_decorator():
             g=object,
         )
 
-    ### if check_types works, this should raise an TypeError because h epxects a specific class and object is too general
+    ### if check_types works, this should raise an TypeError because h expects a specific class and object is too general
     with pytest.raises(TypeError):
         checked_class(
             1,
@@ -312,7 +336,7 @@ def test_check_types_decorator():
             h=object,
         )
 
-    ### if check_types works, this should raise an TypeError because j epxects a specific class and object is too general
+    ### if check_types works, this should raise an TypeError because j expects a specific class and object is too general
     with pytest.raises(TypeError):
         checked_class(
             1,
@@ -323,7 +347,7 @@ def test_check_types_decorator():
             j=object,
         )
 
-    ### if check_types works, this should raise an TypeError because j epxects a different class than needed_class
+    ### if check_types works, this should raise an TypeError because j expects a different class than needed_class
     with pytest.raises(TypeError):
         checked_class(
             1,
@@ -334,7 +358,7 @@ def test_check_types_decorator():
             j=needed_class,
         )
 
-    ### if check_types works, this should raise an TypeError because j epxects a class not an int
+    ### if check_types works, this should raise an TypeError because j expects a class not an int
     with pytest.raises(TypeError):
         checked_class(
             1,
@@ -345,7 +369,7 @@ def test_check_types_decorator():
             j=1,
         )
 
-    ### if check_types works, this should raise an TypeError because g epxects a different class than needed_class
+    ### if check_types works, this should raise an TypeError because g expects a different class than needed_class
     with pytest.raises(TypeError):
         checked_class(
             1,
@@ -356,7 +380,7 @@ def test_check_types_decorator():
             g=needed_class,
         )
 
-    ### if check_types works, this should raise an TypeError because h epxects a different class than needed_class
+    ### if check_types works, this should raise an TypeError because h expects a different class than needed_class
     with pytest.raises(TypeError):
         checked_class(
             1,
@@ -365,6 +389,72 @@ def test_check_types_decorator():
             1.0,
             {"a": 1},
             h=needed_class,
+        )
+
+    ### if check_types works, this should raise an TypeError because k expects a tuple like (int, str)
+    with pytest.raises(TypeError):
+        checked_class(
+            1,
+            [[1]],
+            needed_obj,
+            1.0,
+            {"a": 1},
+            k=(1, 2),
+        )
+
+    ### if check_types works, this should raise an TypeError because k expects a tuple like (int, str)
+    with pytest.raises(TypeError):
+        checked_class(
+            1,
+            [[1]],
+            needed_obj,
+            1.0,
+            {"a": 1},
+            k=[1, "a"],
+        )
+
+    ### if check_types works, this should raise an TypeError because k expects a tuple like (int, str)
+    with pytest.raises(TypeError):
+        checked_class(
+            1,
+            [[1]],
+            needed_obj,
+            1.0,
+            {"a": 1},
+            k=(1, "a", 2),
+        )
+
+    ### if check_types works, this should raise an TypeError because l expects a list like [int, str]
+    with pytest.raises(TypeError):
+        checked_class(
+            1,
+            [[1]],
+            needed_obj,
+            1.0,
+            {"a": 1},
+            l=[1, 2],
+        )
+
+    ### if check_types works, this should raise an TypeError because l expects a list like [int, str]
+    with pytest.raises(TypeError):
+        checked_class(
+            1,
+            [[1]],
+            needed_obj,
+            1.0,
+            {"a": 1},
+            l=[1, "a", 2],
+        )
+
+    ### if check_types works, this should raise an TypeError because l expects a list like [int, str]
+    with pytest.raises(TypeError):
+        checked_class(
+            1,
+            [[1]],
+            needed_obj,
+            1.0,
+            {"a": 1},
+            l=(1, "a"),
         )
 
 
