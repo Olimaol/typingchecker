@@ -24,7 +24,7 @@ def check_types(warnings: bool = True, strictfloat: bool = False):
         If True, ints will raise an error if a float is expected, by default False, in which case ints will be converted to floats
     """
 
-    def decorator(func: Callable):
+    def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             ### get type hints and variable names
