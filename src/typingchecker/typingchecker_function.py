@@ -124,9 +124,9 @@ def check_type_hint(
     if current_type_hint is None:
         current_type_hint = type_hint
 
-    # print(f"var_name: {var_name}, var: {current_var}, var_idx: {var_idx}")
+    ### debug print
     # print(
-    #     f"var_name: {var_name}, var: {current_var}, var_type: {type(current_var)}, current_type_hint: {current_type_hint}, origin: {get_origin(current_type_hint)}, args: {get_args(current_type_hint)}"
+    #     f"var_name: {var_name}, var: {current_var[var_idx]}, var_type: {type(current_var[var_idx])}, current_type_hint: {current_type_hint}, origin: {get_origin(current_type_hint)}, args: {get_args(current_type_hint)}"
     # )
 
     ### depending on origin of type hint doe different things
@@ -324,10 +324,13 @@ def check_type_hint(
 
     ### if origin is None, its a simple type and we can check it directly using isinstance
     elif get_origin(current_type_hint) is None:
+        ### catch Any type hint, which should always pass
+        if current_type_hint is Any:
+            return None
         ### check if variable is an instance of the type hint, if not raise TypeError
-        ### catch if float type is expected as type hint but the type of the variable is int
-        ### this should not raise an error ints can simply be converted to float (nothing is lost, in contrast to float->int)
         if not isinstance(current_var[var_idx], current_type_hint):
+            ### catch if float type is expected as type hint but the type of the variable is int
+            ### this should not raise an error ints can simply be converted to float (nothing is lost, in contrast to float->int)
             if (
                 current_type_hint is float
                 and isinstance(current_var[var_idx], int)

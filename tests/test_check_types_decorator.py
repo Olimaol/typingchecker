@@ -1,5 +1,5 @@
 from typingchecker import check_types
-from typing import Union, Type
+from typing import Union, Type, Any
 import pytest
 
 
@@ -38,6 +38,7 @@ class checked_class:
         j: Type[needed_int_class] | Type[needed_obj_class] = needed_int_class,
         k: tuple[int, str] = (1, "a"),
         l: list[int, str] = [1, "a"],
+        m: Any = 5.0,
     ):
         pass
 
@@ -205,6 +206,24 @@ def test_check_types_decorator():
         1.0,
         {"a": 1},
         l=[1, "a"],
+    )
+
+    ### if check_types works, this should not raise an error because m is of type Any
+    checked_class(
+        1,
+        [[1]],
+        needed_obj,
+        1.0,
+        {"a": 1},
+        m=5.0,
+    )
+    checked_class(
+        1,
+        [[1]],
+        needed_obj,
+        1.0,
+        {"a": 1},
+        m="5.0",
     )
 
     ####################################################################################
