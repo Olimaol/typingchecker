@@ -7,6 +7,7 @@ from typing import (
     Callable,
     Optional,
 )
+from collections.abc import Callable as Callable_abc
 import inspect
 from functools import wraps
 
@@ -124,10 +125,11 @@ def check_type_hint(
     if current_type_hint is None:
         current_type_hint = type_hint
 
-    ### debug print
-    # print(
-    #     f"var_name: {var_name}, var: {current_var[var_idx]}, var_type: {type(current_var[var_idx])}, current_type_hint: {current_type_hint}, origin: {get_origin(current_type_hint)}, args: {get_args(current_type_hint)}"
-    # )
+    # ### debug print
+    # if var_name == "n":
+    #     print(
+    #         f"var_name: {var_name}\nvar: {current_var[var_idx]}\nvar_type: {type(current_var[var_idx])}\ncurrent_type_hint: {current_type_hint}\norigin: {get_origin(current_type_hint)}\nargs: {get_args(current_type_hint)}"
+    #     )
 
     ### depending on origin of type hint doe different things
     ### if origin is type
@@ -157,7 +159,7 @@ def check_type_hint(
     ### check if type is dict
     ### check if type of all keys and vals are correct
     ### do this by calling function check_type_hint recursively
-    if get_origin(current_type_hint) is dict:
+    elif get_origin(current_type_hint) is dict:
         ### check if type is dict
         if not isinstance(current_var[var_idx], dict):
             raise TypeError(
@@ -343,6 +345,23 @@ def check_type_hint(
             )
         else:
             return None
+
+    ### if origin is Callable check if variable is callable
+    elif get_origin(current_type_hint) is Callable_abc:
+        ### check if variable is callable
+        if not callable(current_var[var_idx]):
+            raise TypeError(
+                f"Parameter {var_name} of function {func} should be {type_hint}"
+            )
+        ### if there are args for the Callable type hint print that the arguments of
+        ### Callable are not checked
+        if get_args(current_type_hint) != ():
+            if warnings:
+                print(
+                    f"WARNING check_type_hint: Arguments of Callable type hint for variable {var_name} of function {func} are not checked."
+                )
+        ### variable passed all checks, return None
+        return None
 
     ### if variable passed all checks without errors or returning, print that the type cannot be checked
     if warnings:

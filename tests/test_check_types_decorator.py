@@ -1,5 +1,5 @@
 from typingchecker import check_types
-from typing import Union, Type, Any
+from typing import Union, Type, Any, Callable
 import pytest
 
 
@@ -39,6 +39,7 @@ class checked_class:
         k: tuple[int, str] = (1, "a"),
         l: list[int, str] = [1, "a"],
         m: Any = 5.0,
+        n: Callable = lambda x, y: x + y,
     ):
         pass
 
@@ -224,6 +225,42 @@ def test_check_types_decorator():
         1.0,
         {"a": 1},
         m="5.0",
+    )
+
+    ### if check_types works, this should not raise an error because n is of type Callable
+    def add(x: int | float, y: str, z: Any) -> float:
+        return float(x + y)
+
+    class add_class:
+        def __init__(self) -> None:
+            pass
+
+        def __call__(self, x: str, y: int, z: Any) -> float:
+            return x + y
+
+    checked_class(
+        1,
+        [[1]],
+        needed_obj,
+        1.0,
+        {"a": 1},
+        n=lambda x, y: x + y,
+    )
+    checked_class(
+        1,
+        [[1]],
+        needed_obj,
+        1.0,
+        {"a": 1},
+        n=add,
+    )
+    checked_class(
+        1,
+        [[1]],
+        needed_obj,
+        1.0,
+        {"a": 1},
+        n=add_class(),
     )
 
     ####################################################################################
@@ -474,6 +511,17 @@ def test_check_types_decorator():
             1.0,
             {"a": 1},
             l=(1, "a"),
+        )
+
+    ### if check_types works, this should raise an TypeError because n expects a callable
+    with pytest.raises(TypeError):
+        checked_class(
+            1,
+            [[1]],
+            needed_obj,
+            1.0,
+            {"a": 1},
+            n=5,
         )
 
 
