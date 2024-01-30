@@ -22,7 +22,8 @@ def check_types(warnings: bool = True, strictfloat: bool = False):
     warnings : bool, optional
         Whether to print warnings when a type cannot be checked, by default True
     strictfloat : bool, optional
-        If True, ints will raise an error if a float is expected, by default False, in which case ints will be converted to floats
+        If True, ints will raise an error if a float is expected, by default False, in
+        which case ints will pass and if possible will be converted to floats
     """
 
     def decorator(func):
@@ -338,7 +339,11 @@ def check_type_hint(
                 and isinstance(current_var[var_idx], int)
                 and not strictfloat
             ):
-                current_var[var_idx] = float(current_var[var_idx])
+                ### try to convert int to float
+                try:
+                    current_var[var_idx] = float(current_var[var_idx])
+                except:
+                    pass
                 return None
             raise TypeError(
                 f"Parameter {var_name} of function {func} should be {type_hint}"
